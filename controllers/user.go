@@ -3,22 +3,30 @@ package controllers
 import (
 	"net/http"
 
+	"github.com/Grandbusta/cloud-drive/utils"
 	"github.com/gin-gonic/gin"
 )
 
 type CreateUserInput struct {
-	Email    string
-	Password string
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func CreateUser(ctx *gin.Context) {
 	var user CreateUserInput
 	if err := ctx.ShouldBindJSON(&user); err != nil {
-		ctx.JSON(http.StatusUnprocessableEntity, gin.H{
-			"error": "invalid-json",
-		})
+		utils.ServerResponse(ctx, http.StatusUnprocessableEntity, "Invalid payload")
+		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "sender",
-	})
+	if isValid := utils.ValidEmail(user.Email); !isValid {
+		utils.ServerResponse(ctx, http.StatusUnprocessableEntity, "Invalid payload")
+		return
+	}
+	password, err := utils.HashPassword(user.Password)
+	if err != nil {
+		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
+		return
+	}
+	user.Password = password
+	utils.SuccessWithMessage(ctx, http.StatusOK, "endpoint successful")
 }
