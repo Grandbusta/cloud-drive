@@ -7,6 +7,7 @@ import (
 	"github.com/Grandbusta/cloud-drive/config"
 	"github.com/Grandbusta/cloud-drive/controllers"
 	"github.com/Grandbusta/cloud-drive/middlewares"
+	"github.com/Grandbusta/cloud-drive/models"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -24,7 +25,7 @@ func main() {
 	r := gin.Default()
 	r.Use(middlewares.CORSMiddleware())
 	db := config.NewDB()
-	db.AutoMigrate()
+	db.Debug().AutoMigrate(&models.User{}, &models.Resource{})
 
 	userRoutes := r.Group("/user")
 	userRoutes.POST("/signup", controllers.CreateUser)
