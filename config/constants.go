@@ -7,4 +7,5 @@ var (
 	FOLDER_EXT           = "folder"
 	ACCESS_TYPE_PUBLIC   = "public"
 	ACCESS_TYPE_PRIVATE  = "private"
+	ROOT                 = "root"
 )

@@ -31,5 +31,8 @@ func main() {
 	userRoutes.POST("/signup", controllers.CreateUser)
 	userRoutes.POST("/signin", controllers.LoginUser)
 
+	resourceRoutes := r.Group("/resource")
+	resourceRoutes.POST("/create-folder", middlewares.TokenAuthMiddleware(), controllers.CreateFolder)
+
 	r.Run(":8080")
 }

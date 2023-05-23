@@ -22,6 +22,11 @@ type Resource struct {
 	UpdatedAt    time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
+type CreateFolderInput struct {
+	Name     string `json:"name"`
+	ParentID string `json:"parent_id"`
+}
+
 func (r *Resource) BeforeCreate(tx *gorm.DB) (err error) {
 	r.ID = uuid.NewV4().String()
 	return
@@ -39,6 +44,13 @@ func (r *Resource) BeforeCreate(tx *gorm.DB) (err error) {
 func (r *Resource) CreateResource(db *gorm.DB) (*Resource, error) {
 	r.Prepare()
 	if err := db.Debug().Create(&r).Error; err != nil {
+		return &Resource{}, err
+	}
+	return r, nil
+}
+
+func (r *Resource) FindResourceByID(db *gorm.DB) (*Resource, error) {
+	if err := db.Debug().Where("id=?", r.ID).First(&r).Error; err != nil {
 		return &Resource{}, err
 	}
 	return r, nil
