@@ -13,13 +13,8 @@ import (
 	"gorm.io/gorm"
 )
 
-type CreateUserInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 func CreateUser(ctx *gin.Context) {
-	var userInput CreateUserInput
+	var userInput models.CreateUserInput
 	db := config.NewDB()
 	if err := ctx.ShouldBindJSON(&userInput); err != nil {
 		utils.ServerResponse(ctx, http.StatusUnprocessableEntity, "Invalid payload")
@@ -47,7 +42,6 @@ func CreateUser(ctx *gin.Context) {
 		utils.ServerResponse(ctx, http.StatusConflict, "User already exist")
 		return
 	}
-
 	newUser, err := user.SaveUser(db)
 	if err != nil {
 		log.Println(err)
@@ -58,6 +52,27 @@ func CreateUser(ctx *gin.Context) {
 		ctx,
 		http.StatusCreated,
 		"User created successfully",
-		newUser,
+		newUser.PublicUser(),
 	)
+}
+
+func LoginUser(ctx *gin.Context) {
+	var userInput models.LoginUserInput
+	db := config.NewDB()
+	if err := ctx.ShouldBindJSON(&userInput); err != nil {
+		utils.ServerResponse(ctx, http.StatusUnprocessableEntity, "Invalid payload")
+		return
+	}
+	user := models.User{}
+	existingUser, err := user.FindUserByEmail(db)
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		fmt.Println(err)
+		utils.ServerResponse(ctx, http.StatusNotFound, "User not found")
+		return
+	}
+	if err := utils.ComparePassword(existingUser.Password, userInput.Password); err != nil {
+		utils.ServerResponse(ctx, http.StatusUnauthorized, "Invalid credentials")
+		return
+	}
+	utils.SuccessWithData(ctx, http.StatusOK, existingUser.PublicUser())
 }
