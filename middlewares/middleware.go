@@ -1,6 +1,11 @@
 package middlewares
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
+
+	"github.com/Grandbusta/cloud-drive/utils"
+	"github.com/gin-gonic/gin"
+)
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -14,5 +19,17 @@ func CORSMiddleware() gin.HandlerFunc {
 			return
 		}
 		c.Next()
+	}
+}
+
+func TokenAuthMiddleware() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		err := utils.VerifyToken(ctx)
+		if err != nil {
+			utils.ServerResponse(ctx, http.StatusUnauthorized, "Unauthorized")
+			ctx.Abort()
+			return
+		}
+		ctx.Next()
 	}
 }

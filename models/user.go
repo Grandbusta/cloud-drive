@@ -56,7 +56,7 @@ func (u *User) SaveUser(db *gorm.DB) (*User, error) {
 
 func (u *User) FindUserByEmail(db *gorm.DB) (*User, error) {
 	if err := db.Debug().Where("email=?", u.Email).First(&u).Error; err != nil {
-		return &User{}, nil
+		return &User{}, err
 	}
 	return u, nil
 }

@@ -29,6 +29,7 @@ func main() {
 
 	userRoutes := r.Group("/user")
 	userRoutes.POST("/signup", controllers.CreateUser)
+	userRoutes.POST("/signin", controllers.LoginUser)
 
 	r.Run(":8080")
 }

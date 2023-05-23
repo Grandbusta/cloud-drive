@@ -64,9 +64,9 @@ func LoginUser(ctx *gin.Context) {
 		return
 	}
 	user := models.User{}
+	user.Email = userInput.Email
 	existingUser, err := user.FindUserByEmail(db)
-	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		fmt.Println(err)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		utils.ServerResponse(ctx, http.StatusNotFound, "User not found")
 		return
 	}
@@ -74,5 +74,14 @@ func LoginUser(ctx *gin.Context) {
 		utils.ServerResponse(ctx, http.StatusUnauthorized, "Invalid credentials")
 		return
 	}
-	utils.SuccessWithData(ctx, http.StatusOK, existingUser.PublicUser())
+	token, err := utils.CreateToken(existingUser.ID)
+	if err != nil {
+		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
+		return
+	}
+	utils.SuccessWithData(ctx, http.StatusOK, map[string]interface{}{
+		"user":  existingUser.PublicUser(),
+		"token": token,
+	},
+	)
 }
