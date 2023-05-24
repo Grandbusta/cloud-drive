@@ -48,7 +48,7 @@ func CreateUser(ctx *gin.Context) {
 		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
 		return
 	}
-	utils.SuccessWithMessageeAndData(
+	utils.SuccessWithMessageAndData(
 		ctx,
 		http.StatusCreated,
 		"User created successfully",

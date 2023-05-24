@@ -29,9 +29,13 @@ func CreateFolder(ctx *gin.Context) {
 	fmt.Println(folderInput)
 	resource.ParentID = folderInput.ParentID
 	if folderInput.ParentID != config.ROOT {
-		_, err := resource.FindResourceByID(db)
+		parentResource, err := resource.FindResourceByID(db)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			utils.ServerResponse(ctx, http.StatusNotFound, "parentId not found")
+			utils.ServerResponse(ctx, http.StatusNotFound, "parent_id not found")
+			return
+		}
+		if parentResource.ResourceType != config.RESOURCE_TYPE_FOLDER {
+			utils.ServerResponse(ctx, http.StatusBadRequest, "Invalid payload")
 			return
 		}
 	}
@@ -46,5 +50,25 @@ func CreateFolder(ctx *gin.Context) {
 		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
 		return
 	}
-	utils.SuccessWithData(ctx, http.StatusCreated, newResource)
+	utils.SuccessWithData(ctx, http.StatusCreated, newResource.PublicResource())
+}
+
+func UpdateResource(ctx *gin.Context) {
+	var resourceInput models.UpdateResourceInput
+	db := config.NewDB()
+	if err := ctx.ShouldBindJSON(&resourceInput); err != nil {
+		utils.ServerResponse(ctx, http.StatusUnprocessableEntity, "Invalid payload")
+		return
+	}
+	resource := models.Resource{}
+	resource.ID = resourceInput.ParentID
+	if resourceInput.ParentID != "" {
+		_, err := resource.FindResourceByID(db)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			utils.ServerResponse(ctx, http.StatusNotFound, "parent_id not found")
+			return
+		}
+	}
+	fmt.Println(resourceInput)
+	utils.SuccessWithMessage(ctx, http.StatusOK, "Updated successfully")
 }

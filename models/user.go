@@ -27,10 +27,10 @@ type LoginUserInput struct {
 }
 
 type PublicUser struct {
-	ID        string     `gorm:"primaryKey" json:"id"`
-	Email     string     `gorm:"unique;not null" json:"email"`
+	ID        string     `json:"id"`
+	Email     string     `json:"email"`
 	Resources []Resource `json:"resources"`
-	CreatedAt time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	CreatedAt time.Time  `json:"created_at"`
 }
 
 func (u *User) PublicUser() *PublicUser {
