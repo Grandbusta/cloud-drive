@@ -97,3 +97,7 @@ func UpdateResource(ctx *gin.Context) {
 
 	utils.SuccessWithMessage(ctx, http.StatusOK, "Updated successfully")
 }
+
+func DeleteResource(ctx *gin.Context) {
+
+}

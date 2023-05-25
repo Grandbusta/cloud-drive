@@ -34,6 +34,7 @@ func main() {
 	resourceRoutes := r.Group("/resource")
 	resourceRoutes.POST("/create-folder", middlewares.TokenAuthMiddleware(), controllers.CreateFolder)
 	resourceRoutes.POST("/update/:resource_id", middlewares.TokenAuthMiddleware(), controllers.UpdateResource)
+	resourceRoutes.GET("/delete/:resource_id", middlewares.TokenAuthMiddleware(), controllers.DeleteResource)
 
 	r.Run(":8080")
 }
