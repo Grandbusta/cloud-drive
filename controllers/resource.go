@@ -55,20 +55,45 @@ func CreateFolder(ctx *gin.Context) {
 
 func UpdateResource(ctx *gin.Context) {
 	var resourceInput models.UpdateResourceInput
+	resource_id := ctx.Param("resource_id")
 	db := config.NewDB()
 	if err := ctx.ShouldBindJSON(&resourceInput); err != nil {
 		utils.ServerResponse(ctx, http.StatusUnprocessableEntity, "Invalid payload")
 		return
 	}
 	resource := models.Resource{}
-	resource.ID = resourceInput.ParentID
-	if resourceInput.ParentID != "" {
-		_, err := resource.FindResourceByID(db)
+	resource.ID = resource_id
+	if resourceInput.ParentID != "" && resourceInput.ParentID != config.ROOT {
+		resource.ID = resourceInput.ParentID
+		parentResource, err := resource.FindResourceByID(db)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			utils.ServerResponse(ctx, http.StatusNotFound, "parent_id not found")
 			return
 		}
+		if parentResource.ResourceType != config.RESOURCE_TYPE_FOLDER {
+			utils.ServerResponse(ctx, http.StatusBadRequest, "Invalid payload")
+			return
+		}
 	}
-	fmt.Println(resourceInput)
+
+	if resourceInput.Name != "" {
+		resource.Name = resourceInput.Name
+	}
+
+	if resourceInput.AccessType != "" {
+		if resourceInput.AccessType == config.ACCESS_TYPE_PRIVATE || resourceInput.AccessType == config.ACCESS_TYPE_PUBLIC {
+			resource.AccessType = resourceInput.AccessType
+		} else {
+			utils.ServerResponse(ctx, http.StatusBadRequest, "Invalid payload")
+			return
+		}
+	}
+
+	_, err := resource.UpdateResource(db)
+	if err != nil {
+		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
+		return
+	}
+
 	utils.SuccessWithMessage(ctx, http.StatusOK, "Updated successfully")
 }

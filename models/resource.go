@@ -64,6 +64,10 @@ func (r *Resource) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
+func (r *Resource) Prepare() {
+	r.AccessType = config.ACCESS_TYPE_PRIVATE
+}
+
 func (r *Resource) CreateResource(db *gorm.DB) (*Resource, error) {
 	r.Prepare()
 	if err := db.Debug().Create(&r).Error; err != nil {
@@ -79,6 +83,9 @@ func (r *Resource) FindResourceByID(db *gorm.DB) (*Resource, error) {
 	return r, nil
 }
 
-func (r *Resource) Prepare() {
-	r.AccessType = config.ACCESS_TYPE_PRIVATE
+func (r *Resource) UpdateResource(db *gorm.DB) (*Resource, error) {
+	if err := db.Debug().Where("id=?", r.ID).Updates(&r).Error; err != nil {
+		return &Resource{}, err
+	}
+	return r, nil
 }

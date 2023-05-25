@@ -33,7 +33,7 @@ func main() {
 
 	resourceRoutes := r.Group("/resource")
 	resourceRoutes.POST("/create-folder", middlewares.TokenAuthMiddleware(), controllers.CreateFolder)
-	resourceRoutes.POST("/update", middlewares.TokenAuthMiddleware(), controllers.UpdateResource)
+	resourceRoutes.POST("/update/:resource_id", middlewares.TokenAuthMiddleware(), controllers.UpdateResource)
 
 	r.Run(":8080")
 }
