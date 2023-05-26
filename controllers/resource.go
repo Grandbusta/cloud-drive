@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/Grandbusta/cloud-drive/config"
@@ -127,4 +128,9 @@ func DeleteResource(ctx *gin.Context) {
 		return
 	}
 	utils.SuccessWithMessage(ctx, http.StatusOK, "Deleted successfully")
+}
+
+func UploadFile(ctx *gin.Context) {
+	file, _ := ctx.FormFile("file")
+	log.Println(file.Filename, file.Header)
 }

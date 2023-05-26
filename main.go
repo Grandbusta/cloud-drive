@@ -27,12 +27,14 @@ func main() {
 	db := config.NewDB()
 	db.Debug().AutoMigrate(&models.User{}, &models.Resource{})
 
+	r.MaxMultipartMemory = 8 << 20
 	userRoutes := r.Group("/user")
 	userRoutes.POST("/signup", controllers.CreateUser)
 	userRoutes.POST("/signin", controllers.LoginUser)
 
 	resourceRoutes := r.Group("/resource")
 	resourceRoutes.POST("/create-folder", middlewares.TokenAuthMiddleware(), controllers.CreateFolder)
+	resourceRoutes.POST("/upload-file", middlewares.TokenAuthMiddleware(), controllers.UploadFile)
 	resourceRoutes.POST("/update/:resource_id", middlewares.TokenAuthMiddleware(), controllers.UpdateResource)
 	resourceRoutes.GET("/delete/:resource_id", middlewares.TokenAuthMiddleware(), controllers.DeleteResource)
 
