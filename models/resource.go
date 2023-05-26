@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Grandbusta/cloud-drive/config"
@@ -18,6 +19,7 @@ type Resource struct {
 	Icon         string    `json:"icon"`
 	AccessType   string    `gorm:"not null" json:"access_type"`
 	UserID       string    `json:"user_id"`
+	Path         string    `json:"path"`
 	CreatedAt    time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt    time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
@@ -31,6 +33,7 @@ type PublicResource struct {
 	Icon         string    `json:"icon"`
 	AccessType   string    `json:"access_type"`
 	UserID       string    `json:"user_id"`
+	Path         string    `json:"path"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 
@@ -57,6 +60,11 @@ func (r *Resource) PublicResource() *PublicResource {
 		UserID:       r.UserID,
 		CreatedAt:    r.CreatedAt,
 	}
+}
+
+func (r *Resource) BeforeSave(tx *gorm.DB) (err error) {
+	r.Path = fmt.Sprintf("%v/%v", r.Path, r.ID)
+	return
 }
 
 func (r *Resource) BeforeCreate(tx *gorm.DB) (err error) {
@@ -88,4 +96,9 @@ func (r *Resource) UpdateResource(db *gorm.DB) (*Resource, error) {
 		return &Resource{}, err
 	}
 	return r, nil
+}
+
+func (r *Resource) DeleteResource(db *gorm.DB) error {
+	likePath := fmt.Sprintf("%v%v%v", "%", r.ID, "%")
+	return db.Delete(&r, "path LIKE ?", likePath).Error
 }

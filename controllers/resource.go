@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/Grandbusta/cloud-drive/config"
@@ -13,8 +12,8 @@ import (
 )
 
 func CreateFolder(ctx *gin.Context) {
-	var folderInput models.CreateFolderInput
 	db := config.NewDB()
+	var folderInput models.CreateFolderInput
 	userID, err := utils.ExtractTokenId(ctx)
 	if err != nil || userID == "" {
 		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
@@ -26,10 +25,10 @@ func CreateFolder(ctx *gin.Context) {
 		return
 	}
 	resource := models.Resource{}
-	fmt.Println(folderInput)
-	resource.ParentID = folderInput.ParentID
+	parent := models.Resource{}
+	parent.ID = folderInput.ParentID
 	if folderInput.ParentID != config.ROOT {
-		parentResource, err := resource.FindResourceByID(db)
+		parentResource, err := parent.FindResourceByID(db)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			utils.ServerResponse(ctx, http.StatusNotFound, "parent_id not found")
 			return
@@ -38,7 +37,9 @@ func CreateFolder(ctx *gin.Context) {
 			utils.ServerResponse(ctx, http.StatusBadRequest, "Invalid payload")
 			return
 		}
+		resource.Path = parentResource.Path
 	}
+	resource.ParentID = folderInput.ParentID
 	resource.UserID = userID
 	resource.Name = folderInput.Name
 	resource.ResourceType = config.RESOURCE_TYPE_FOLDER
@@ -54,25 +55,37 @@ func CreateFolder(ctx *gin.Context) {
 }
 
 func UpdateResource(ctx *gin.Context) {
+	db := config.NewDB()
 	var resourceInput models.UpdateResourceInput
 	resource_id := ctx.Param("resource_id")
-	db := config.NewDB()
 	if err := ctx.ShouldBindJSON(&resourceInput); err != nil {
 		utils.ServerResponse(ctx, http.StatusUnprocessableEntity, "Invalid payload")
 		return
 	}
 	resource := models.Resource{}
+	parent := models.Resource{}
 	resource.ID = resource_id
-	if resourceInput.ParentID != "" && resourceInput.ParentID != config.ROOT {
-		resource.ID = resourceInput.ParentID
-		parentResource, err := resource.FindResourceByID(db)
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			utils.ServerResponse(ctx, http.StatusNotFound, "parent_id not found")
-			return
-		}
-		if parentResource.ResourceType != config.RESOURCE_TYPE_FOLDER {
-			utils.ServerResponse(ctx, http.StatusBadRequest, "Invalid payload")
-			return
+	parent.ID = resourceInput.ParentID
+
+	_, err := resource.FindResourceByID(db)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		utils.ServerResponse(ctx, http.StatusNotFound, "resource not found")
+		return
+	}
+
+	if resourceInput.ParentID != "" {
+		if resourceInput.ParentID != config.ROOT {
+			parentResource, err := parent.FindResourceByID(db)
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				utils.ServerResponse(ctx, http.StatusNotFound, "parent_id not found")
+				return
+			}
+			if parentResource.ResourceType != config.RESOURCE_TYPE_FOLDER {
+				utils.ServerResponse(ctx, http.StatusBadRequest, "Invalid payload")
+				return
+			}
+			resource.Path = parentResource.Path
+			resource.ParentID = parentResource.ID
 		}
 	}
 
@@ -89,7 +102,7 @@ func UpdateResource(ctx *gin.Context) {
 		}
 	}
 
-	_, err := resource.UpdateResource(db)
+	_, err = resource.UpdateResource(db)
 	if err != nil {
 		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
 		return
@@ -99,5 +112,19 @@ func UpdateResource(ctx *gin.Context) {
 }
 
 func DeleteResource(ctx *gin.Context) {
-
+	db := config.NewDB()
+	resource_id := ctx.Param("resource_id")
+	resource := models.Resource{}
+	resource.ID = resource_id
+	_, err := resource.FindResourceByID(db)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		utils.ServerResponse(ctx, http.StatusNotFound, "resource not found")
+		return
+	}
+	err = resource.DeleteResource(db)
+	if err != nil {
+		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
+		return
+	}
+	utils.SuccessWithMessage(ctx, http.StatusOK, "Deleted successfully")
 }
