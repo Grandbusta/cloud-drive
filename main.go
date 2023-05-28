@@ -37,6 +37,7 @@ func main() {
 	resourceRoutes.POST("/upload-file", middlewares.TokenAuthMiddleware(), controllers.UploadFile)
 	resourceRoutes.POST("/update/:resource_id", middlewares.TokenAuthMiddleware(), controllers.UpdateResource)
 	resourceRoutes.GET("/delete/:resource_id", middlewares.TokenAuthMiddleware(), controllers.DeleteResource)
+	resourceRoutes.GET("/data/:resource_id", middlewares.TokenAuthMiddleware(), controllers.GetResource)
 
 	r.Run(":8080")
 }

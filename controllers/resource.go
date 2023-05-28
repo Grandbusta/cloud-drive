@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -73,9 +74,7 @@ func UpdateResource(ctx *gin.Context) {
 		return
 	}
 	resource := models.Resource{}
-	parent := models.Resource{}
 	resource.ID = resource_id
-	parent.ID = resourceInput.ParentID
 
 	_, err := resource.FindResourceByID(db)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -83,21 +82,21 @@ func UpdateResource(ctx *gin.Context) {
 		return
 	}
 
-	if resourceInput.ParentID != "" {
-		if resourceInput.ParentID != config.ROOT {
-			parentResource, err := parent.FindResourceByID(db)
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				utils.ServerResponse(ctx, http.StatusNotFound, "parent_id not found")
-				return
-			}
-			if parentResource.ResourceType != config.RESOURCE_TYPE_FOLDER {
-				utils.ServerResponse(ctx, http.StatusBadRequest, "Invalid payload")
-				return
-			}
-			// resource.Path = parentResource.Path
-			resource.ParentID = parentResource.ID
-		}
-	}
+	// if resourceInput.ParentID != "" {
+	// 	if resourceInput.ParentID != config.ROOT {
+	// 		parentResource, err := parent.FindResourceByID(db)
+	// 		if errors.Is(err, gorm.ErrRecordNotFound) {
+	// 			utils.ServerResponse(ctx, http.StatusNotFound, "parent_id not found")
+	// 			return
+	// 		}
+	// 		if parentResource.ResourceType != config.RESOURCE_TYPE_FOLDER {
+	// 			utils.ServerResponse(ctx, http.StatusBadRequest, "Invalid payload")
+	// 			return
+	// 		}
+	// 		// resource.Path = parentResource.Path
+	// 		resource.ParentID = parentResource.ID
+	// 	}
+	// }
 
 	if resourceInput.Name != "" {
 		resource.Name = resourceInput.Name
@@ -131,7 +130,12 @@ func DeleteResource(ctx *gin.Context) {
 		utils.ServerResponse(ctx, http.StatusNotFound, "resource not found")
 		return
 	}
-	err = resource.DeleteResource(db)
+	// err = resource.DeleteResource(db)
+	treePath := models.TreePath{}
+	treePath.Ancestor = resource_id
+	res, err := treePath.SelectDescendants(db)
+	fmt.Println("dfeeee", res)
+	// err = treePath.DeleteDescendants(db)
 	if err != nil {
 		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
 		return
@@ -142,4 +146,29 @@ func DeleteResource(ctx *gin.Context) {
 func UploadFile(ctx *gin.Context) {
 	file, _ := ctx.FormFile("file")
 	log.Println(file.Filename, file.Header)
+}
+
+func GetResource(ctx *gin.Context) {
+	db := config.NewDB()
+	resource_id := ctx.Param("resource_id")
+	resource := models.Resource{}
+	resource.ID = resource_id
+	existingResource, err := resource.FindResourceByID(db)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		utils.ServerResponse(ctx, http.StatusNotFound, "resource not found")
+		return
+	}
+	if existingResource.ResourceType == config.RESOURCE_TYPE_FOLDER {
+		treePath := models.TreePath{}
+		treePath.Ancestor = resource_id
+		res, err := treePath.SelectChildren(db)
+		if err != nil {
+			utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
+			return
+		}
+		utils.SuccessWithData(ctx, http.StatusOK, res)
+		return
+	}
+	utils.SuccessWithData(ctx, http.StatusOK, existingResource.PublicResource())
+
 }

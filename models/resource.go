@@ -43,8 +43,8 @@ type CreateFolderInput struct {
 }
 
 type UpdateResourceInput struct {
-	Name       string `json:"name"`
-	ParentID   string `json:"parent_id"`
+	Name string `json:"name"`
+	// ParentID   string `json:"parent_id"`
 	AccessType string `json:"access_type"`
 }
 
@@ -61,6 +61,26 @@ func (r *Resource) PublicResource() *PublicResource {
 		CreatedAt:    r.CreatedAt,
 	}
 }
+
+// type ResourceSlice []Resource
+
+// func (rs ResourceSlice) PublicResourceList() []*PublicResource {
+// 	var res []*PublicResource
+// 	for _, r := range rs {
+// 		res = append(res, &PublicResource{
+// 			ID:           r.ID,
+// 			Name:         r.Name,
+// 			ResourceType: r.ResourceType,
+// 			ParentID:     r.ParentID,
+// 			FileExt:      r.FileExt,
+// 			Icon:         r.Icon,
+// 			AccessType:   r.AccessType,
+// 			UserID:       r.UserID,
+// 			CreatedAt:    r.CreatedAt,
+// 		})
+// 	}
+// 	return res
+// }
 
 func (r *Resource) BeforeCreate(tx *gorm.DB) (err error) {
 	r.ID = uuid.NewV4().String()
