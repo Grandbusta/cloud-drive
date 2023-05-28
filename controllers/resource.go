@@ -38,16 +38,25 @@ func CreateFolder(ctx *gin.Context) {
 			utils.ServerResponse(ctx, http.StatusBadRequest, "Invalid payload")
 			return
 		}
-		resource.Path = parentResource.Path
+		// resource.Path = parentResource.Path
 	}
 	resource.ParentID = folderInput.ParentID
 	resource.UserID = userID
 	resource.Name = folderInput.Name
 	resource.ResourceType = config.RESOURCE_TYPE_FOLDER
-	resource.ParentID = folderInput.ParentID
 	resource.FileExt = config.FOLDER_EXT
 	resource.AccessType = config.ACCESS_TYPE_PRIVATE
 	newResource, err := resource.CreateResource(db)
+	treePath := models.TreePath{}
+	if folderInput.ParentID == config.ROOT {
+		treePath.Ancestor = newResource.ID
+		treePath.Descendant = newResource.ID
+		err = treePath.InsertRoot(db)
+	} else {
+		treePath.Ancestor = newResource.ParentID
+		treePath.Descendant = newResource.ID
+		err = treePath.InsertDescendant(db)
+	}
 	if err != nil {
 		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
 		return
@@ -85,7 +94,7 @@ func UpdateResource(ctx *gin.Context) {
 				utils.ServerResponse(ctx, http.StatusBadRequest, "Invalid payload")
 				return
 			}
-			resource.Path = parentResource.Path
+			// resource.Path = parentResource.Path
 			resource.ParentID = parentResource.ID
 		}
 	}

@@ -25,7 +25,7 @@ func main() {
 	r := gin.Default()
 	r.Use(middlewares.CORSMiddleware())
 	db := config.NewDB()
-	db.Debug().AutoMigrate(&models.User{}, &models.Resource{})
+	db.Debug().AutoMigrate(&models.User{}, &models.Resource{}, &models.TreePath{})
 
 	r.MaxMultipartMemory = 8 << 20
 	userRoutes := r.Group("/user")

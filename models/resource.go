@@ -10,18 +10,18 @@ import (
 )
 
 type Resource struct {
-	ID           string    `gorm:"primaryKey" json:"id"`
-	Name         string    `gorm:"not null;" json:"name"`
-	ResourceType string    `gorm:"not null;" json:"resource_type"`
-	ParentID     string    `json:"parent_id"`
-	StorageUrl   string    `json:"storage_url"`
-	FileExt      string    `json:"file_ext"`
-	Icon         string    `json:"icon"`
-	AccessType   string    `gorm:"not null" json:"access_type"`
-	UserID       string    `json:"user_id"`
-	Path         string    `json:"path"`
-	CreatedAt    time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
-	UpdatedAt    time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+	ID           string `gorm:"primaryKey" json:"id"`
+	Name         string `gorm:"not null;" json:"name"`
+	ResourceType string `gorm:"not null;" json:"resource_type"`
+	ParentID     string `json:"parent_id"`
+	StorageUrl   string `json:"storage_url"`
+	FileExt      string `json:"file_ext"`
+	Icon         string `json:"icon"`
+	AccessType   string `gorm:"not null" json:"access_type"`
+	UserID       string `json:"user_id"`
+	// Path         string    `json:"path"`
+	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
 type PublicResource struct {
@@ -60,11 +60,6 @@ func (r *Resource) PublicResource() *PublicResource {
 		UserID:       r.UserID,
 		CreatedAt:    r.CreatedAt,
 	}
-}
-
-func (r *Resource) BeforeSave(tx *gorm.DB) (err error) {
-	r.Path = fmt.Sprintf("%v/%v", r.Path, r.ID)
-	return
 }
 
 func (r *Resource) BeforeCreate(tx *gorm.DB) (err error) {
