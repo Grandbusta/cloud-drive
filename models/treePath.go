@@ -1,6 +1,8 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type TreePath struct {
 	ID         uint   `gorm:"primaryKey" json:"id"`
@@ -29,25 +31,25 @@ func (t *TreePath) LinkDescendant(db *gorm.DB) error {
 }
 
 // delete sub-tree
-func (t *TreePath) DeleteDescendants(db *gorm.DB) error {
-	return db.Exec("DELETE FROM tree_paths WHERE ancestor = ? AND descendant <> ?", t.Ancestor, t.Ancestor).Error
+func (t *TreePath) DeleteSelfWithDescendants(db *gorm.DB) error {
+	return db.Exec("DELETE FROM tree_paths WHERE descendant IN (SELECT tree_paths.descendant from tree_paths where tree_paths.ancestor = ?)", t.Ancestor).Error
 }
 
-func (t *TreePath) SelectDescendants(db *gorm.DB) (*[]Resource, error) {
-	var resources []Resource
-	err := db.Raw("SELECT resources.* FROM resources JOIN tree_paths t ON (resources.id = t.descendant) where t.ancestor = ? AND depth > 0 ORDER BY depth ASC", t.Ancestor).Scan(&resources).Error
+func (t *TreePath) SelectSelfWithDescendants(db *gorm.DB) ([]string, error) {
+	var paths []string
+	err := db.Raw("SELECT tree_paths.descendant from tree_paths where tree_paths.ancestor = ? ORDER BY depth ASC", t.Ancestor).Scan(&paths).Error
 	if err != nil {
-		return &[]Resource{}, err
+		return paths, err
 	}
-	return &resources, nil
+	return paths, nil
 }
 
 // Select direct children
-func (t *TreePath) SelectChildren(db *gorm.DB) (*[]Resource, error) {
-	var resources []Resource
+func (t *TreePath) SelectChildren(db *gorm.DB) ([]PublicResource, error) {
+	var resources []PublicResource
 	err := db.Raw("SELECT resources.* FROM resources JOIN tree_paths t ON (resources.id = t.descendant) where t.ancestor = ? AND depth = 1", t.Ancestor).Scan(&resources).Error
 	if err != nil {
-		return &[]Resource{}, err
+		return []PublicResource{}, err
 	}
-	return &resources, nil
+	return resources, nil
 }

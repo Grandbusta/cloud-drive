@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/Grandbusta/cloud-drive/config"
@@ -62,26 +61,6 @@ func (r *Resource) PublicResource() *PublicResource {
 	}
 }
 
-// type ResourceSlice []Resource
-
-// func (rs ResourceSlice) PublicResourceList() []*PublicResource {
-// 	var res []*PublicResource
-// 	for _, r := range rs {
-// 		res = append(res, &PublicResource{
-// 			ID:           r.ID,
-// 			Name:         r.Name,
-// 			ResourceType: r.ResourceType,
-// 			ParentID:     r.ParentID,
-// 			FileExt:      r.FileExt,
-// 			Icon:         r.Icon,
-// 			AccessType:   r.AccessType,
-// 			UserID:       r.UserID,
-// 			CreatedAt:    r.CreatedAt,
-// 		})
-// 	}
-// 	return res
-// }
-
 func (r *Resource) BeforeCreate(tx *gorm.DB) (err error) {
 	r.ID = uuid.NewV4().String()
 	return
@@ -113,7 +92,7 @@ func (r *Resource) UpdateResource(db *gorm.DB) (*Resource, error) {
 	return r, nil
 }
 
-func (r *Resource) DeleteResource(db *gorm.DB) error {
-	likePath := fmt.Sprintf("%v%v%v", "%", r.ID, "%")
-	return db.Delete(&r, "path LIKE ?", likePath).Error
+func DeleteResourceByIds(db *gorm.DB, ids []string) error {
+	return db.Exec("DELETE FROM resources WHERE id IN ?", ids).Error
+
 }

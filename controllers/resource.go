@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -130,12 +129,11 @@ func DeleteResource(ctx *gin.Context) {
 		utils.ServerResponse(ctx, http.StatusNotFound, "resource not found")
 		return
 	}
-	// err = resource.DeleteResource(db)
 	treePath := models.TreePath{}
 	treePath.Ancestor = resource_id
-	res, err := treePath.SelectDescendants(db)
-	fmt.Println("dfeeee", res)
-	// err = treePath.DeleteDescendants(db)
+	resourceIds, err := treePath.SelectSelfWithDescendants(db)
+	err = treePath.DeleteSelfWithDescendants(db)
+	err = models.DeleteResourceByIds(db, resourceIds)
 	if err != nil {
 		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
 		return
@@ -166,7 +164,15 @@ func GetResource(ctx *gin.Context) {
 			utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
 			return
 		}
-		utils.SuccessWithData(ctx, http.StatusOK, res)
+		if len(res) == 0 {
+			res = make([]models.PublicResource, 0)
+		}
+		utils.SuccessWithData(ctx, http.StatusOK,
+			map[string]interface{}{
+				"resource": existingResource.PublicResource(),
+				"children": res,
+			},
+		)
 		return
 	}
 	utils.SuccessWithData(ctx, http.StatusOK, existingResource.PublicResource())
