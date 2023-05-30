@@ -8,6 +8,7 @@ import (
 	"github.com/Grandbusta/cloud-drive/config"
 	"github.com/Grandbusta/cloud-drive/models"
 	"github.com/Grandbusta/cloud-drive/utils"
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -81,22 +82,6 @@ func UpdateResource(ctx *gin.Context) {
 		return
 	}
 
-	// if resourceInput.ParentID != "" {
-	// 	if resourceInput.ParentID != config.ROOT {
-	// 		parentResource, err := parent.FindResourceByID(db)
-	// 		if errors.Is(err, gorm.ErrRecordNotFound) {
-	// 			utils.ServerResponse(ctx, http.StatusNotFound, "parent_id not found")
-	// 			return
-	// 		}
-	// 		if parentResource.ResourceType != config.RESOURCE_TYPE_FOLDER {
-	// 			utils.ServerResponse(ctx, http.StatusBadRequest, "Invalid payload")
-	// 			return
-	// 		}
-	// 		// resource.Path = parentResource.Path
-	// 		resource.ParentID = parentResource.ID
-	// 	}
-	// }
-
 	if resourceInput.Name != "" {
 		resource.Name = resourceInput.Name
 	}
@@ -142,8 +127,20 @@ func DeleteResource(ctx *gin.Context) {
 }
 
 func UploadFile(ctx *gin.Context) {
-	file, _ := ctx.FormFile("file")
-	log.Println(file.Filename, file.Header)
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		utils.ServerResponse(ctx, http.StatusBadRequest, "Failed to upload")
+		return
+	}
+	log.Println(file.Filename, file.Header, file)
+	cld := config.NewCld()
+	uploadResult, err := cld.Upload.Upload(ctx, file, uploader.UploadParams{Folder: "cloud-drive", ResourceType: "auto"})
+	if err != nil {
+		log.Println(err)
+		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
+		return
+	}
+	utils.SuccessWithMessageAndData(ctx, http.StatusOK, "Upload successful", uploadResult)
 }
 
 func GetResource(ctx *gin.Context) {
