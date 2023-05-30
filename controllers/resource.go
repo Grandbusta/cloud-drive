@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -127,6 +128,12 @@ func DeleteResource(ctx *gin.Context) {
 }
 
 func UploadFile(ctx *gin.Context) {
+	// db := config.NewDB()
+	userID, err := utils.ExtractTokenId(ctx)
+	if err != nil || userID == "" {
+		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
+		return
+	}
 	file, _, err := ctx.Request.FormFile("file")
 	if err != nil {
 		utils.ServerResponse(ctx, http.StatusBadRequest, "Failed to upload")
@@ -139,6 +146,12 @@ func UploadFile(ctx *gin.Context) {
 		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
 		return
 	}
+	resource := models.Resource{}
+	resource.UserID = userID
+	resource.AccessType = config.ACCESS_TYPE_PRIVATE
+	resource.ResourceType = config.REESOURCE_TYPE_FILE
+
+	fmt.Println(uploadResult.SecureURL, uploadResult.PublicID)
 	utils.SuccessWithMessageAndData(ctx, http.StatusOK, "Upload successful", uploadResult)
 }
 
