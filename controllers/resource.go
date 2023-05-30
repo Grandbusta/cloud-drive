@@ -127,12 +127,11 @@ func DeleteResource(ctx *gin.Context) {
 }
 
 func UploadFile(ctx *gin.Context) {
-	file, err := ctx.FormFile("file")
+	file, _, err := ctx.Request.FormFile("file")
 	if err != nil {
 		utils.ServerResponse(ctx, http.StatusBadRequest, "Failed to upload")
 		return
 	}
-	log.Println(file.Filename, file.Header, file)
 	cld := config.NewCld()
 	uploadResult, err := cld.Upload.Upload(ctx, file, uploader.UploadParams{Folder: "cloud-drive", ResourceType: "auto"})
 	if err != nil {
