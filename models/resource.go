@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/Grandbusta/cloud-drive/config"
@@ -44,6 +45,19 @@ type CreateFolderInput struct {
 type UpdateResourceInput struct {
 	Name       string `json:"name"`
 	AccessType string `json:"access_type"`
+}
+
+type StorageInfo struct {
+	SecureURL string `json:"url"`
+	PublicID  string `json:"id"`
+}
+
+func (s *StorageInfo) BuildStorageInfoJSON() ([]byte, error) {
+	data, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func (r *Resource) PublicResource() *PublicResource {

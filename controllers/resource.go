@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
+	"path"
 
 	"github.com/Grandbusta/cloud-drive/config"
 	"github.com/Grandbusta/cloud-drive/models"
@@ -40,7 +40,6 @@ func CreateFolder(ctx *gin.Context) {
 			utils.ServerResponse(ctx, http.StatusBadRequest, "Invalid payload")
 			return
 		}
-		// resource.Path = parentResource.Path
 	}
 	resource.ParentID = folderInput.ParentID
 	resource.UserID = userID
@@ -128,31 +127,76 @@ func DeleteResource(ctx *gin.Context) {
 }
 
 func UploadFile(ctx *gin.Context) {
-	// db := config.NewDB()
+	db := config.NewDB()
 	userID, err := utils.ExtractTokenId(ctx)
 	if err != nil || userID == "" {
 		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
 		return
 	}
-	file, _, err := ctx.Request.FormFile("file")
+
+	parentID := ctx.PostForm("parent_id")
+	if parentID == "" {
+		utils.ServerResponse(ctx, http.StatusUnprocessableEntity, "Invalid payload")
+		return
+	}
+	parent := models.Resource{}
+	parent.ID = parentID
+	if parentID != config.ROOT {
+		parentResource, err := parent.FindResourceByID(db)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			utils.ServerResponse(ctx, http.StatusNotFound, "parent_id not found")
+			return
+		}
+		if parentResource.ResourceType != config.RESOURCE_TYPE_FOLDER {
+			utils.ServerResponse(ctx, http.StatusBadRequest, "Invalid payload")
+			return
+		}
+	}
+	file, header, err := ctx.Request.FormFile("file")
 	if err != nil {
 		utils.ServerResponse(ctx, http.StatusBadRequest, "Failed to upload")
 		return
 	}
 	cld := config.NewCld()
+
+	log.Println("Uploading to storage...")
 	uploadResult, err := cld.Upload.Upload(ctx, file, uploader.UploadParams{Folder: "cloud-drive", ResourceType: "auto"})
+	if err != nil {
+		log.Println("Upload failed. Err: ", err)
+		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
+		return
+	}
+
+	storageInfo := models.StorageInfo{PublicID: uploadResult.PublicID, SecureURL: uploadResult.SecureURL}
+	storageInfoJSON, _ := storageInfo.BuildStorageInfoJSON()
+
+	resource := models.Resource{}
+	resource.UserID = userID
+	resource.ParentID = parentID
+
+	resource.AccessType = config.ACCESS_TYPE_PRIVATE
+	resource.ResourceType = config.RESOURCE_TYPE_FILE
+	resource.FileExt = path.Ext(header.Filename)
+	resource.Name = header.Filename
+	resource.StorageInfo = storageInfoJSON
+
+	newResource, err := resource.CreateResource(db)
+	treePath := models.TreePath{}
+	if parentID == config.ROOT {
+		treePath.Ancestor = newResource.ID
+		treePath.Descendant = newResource.ID
+		err = treePath.InsertRoot(db)
+	} else {
+		treePath.Ancestor = newResource.ParentID
+		treePath.Descendant = newResource.ID
+		err = treePath.InsertDescendant(db)
+	}
 	if err != nil {
 		log.Println(err)
 		utils.ServerResponse(ctx, http.StatusInternalServerError, "An error occured")
 		return
 	}
-	resource := models.Resource{}
-	resource.UserID = userID
-	resource.AccessType = config.ACCESS_TYPE_PRIVATE
-	resource.ResourceType = config.REESOURCE_TYPE_FILE
-
-	fmt.Println(uploadResult.SecureURL, uploadResult.PublicID)
-	utils.SuccessWithMessageAndData(ctx, http.StatusOK, "Upload successful", uploadResult)
+	utils.SuccessWithMessageAndData(ctx, http.StatusOK, "Upload successful", newResource.PublicResource())
 }
 
 func GetResource(ctx *gin.Context) {
