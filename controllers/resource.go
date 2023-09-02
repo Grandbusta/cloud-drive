@@ -177,7 +177,7 @@ func UploadFile(ctx *gin.Context) {
 	resource.AccessType = config.ACCESS_TYPE_PRIVATE
 	resource.ResourceType = config.RESOURCE_TYPE_FILE
 	resource.FileExt = path.Ext(header.Filename)
-	resource.Name = header.Filename
+	resource.Name = header.Filename[:len(header.Filename)-len(path.Ext(header.Filename))]
 	resource.StorageInfo = storageInfoJSON
 
 	newResource, err := resource.CreateResource(db)
