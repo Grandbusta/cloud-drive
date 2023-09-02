@@ -29,9 +29,9 @@ Star⭐ the repo if you like what you see😉.
 - [x] User Signup
 - [x] Create a folder (resource)
 - [x] Upload file (resource)
-- [x] Update resource
-- [x] Delete resource
 - [x] Get resource
+- [x] Update resource
+- [] Delete resource
 
 NB: A recource can be a file or folder
 
