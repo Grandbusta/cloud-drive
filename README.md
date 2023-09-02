@@ -31,7 +31,7 @@ Star⭐ the repo if you like what you see😉.
 - [x] Upload file (resource)
 - [x] Get resource
 - [x] Update resource
-- [] Delete resource
+- [ ] Delete resource
 
 NB: A recource can be a file or folder
 
