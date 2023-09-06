@@ -20,6 +20,7 @@ Star⭐ the repo if you like what you see😉.
 - Gin Framework
 - PostgreSQL
 - GORM
+- Docker
 
 ## ⛷️Getting Started
 
